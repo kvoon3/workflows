@@ -1,0 +1,58 @@
+on:
+  workflow_call:
+    inputs:
+      build:
+        default: pnpm run build
+        type: string
+        required: false
+        description: build script
+      publish:
+        default: false
+        type: boolean
+        required: false
+        description: Whether publish to npm
+
+permissions:
+  id-token: write  # Required for OIDC
+  contents: write
+
+jobs:
+  reusable_workflow_job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+            fetch-depth: 0 # full git history
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4.1.0
+
+      - name: Set node
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: pnpm
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install Dependences
+        run: pnpm install --frozen-lockfile
+
+      - name: Build package
+        run: ${{ inputs.build }}
+        if: ${{ inputs.build }}
+
+      - name: Generate changelog
+        run: npx changelogithub # or changelogithub@0.12 to ensure a stable result
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Ensure npm 11.5.1 or later is installed
+      - name: Update npm
+        run: npm install -g npm@latest
+        if: ${{inputs.publish}}
+
+      - name: Publish
+        run: pnpm -r publish --access public --no-git-checks
+        if: ${{inputs.publish}}
