@@ -11,6 +11,11 @@ on:
         default: ''
         type: string # npm vscode
         required: false
+    secrets:
+      VSCE_PAT:
+        required: false
+      OVSX_PAT:
+        required: false
 
 jobs:
   reusable_workflow_job:
