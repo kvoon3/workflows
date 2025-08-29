@@ -7,12 +7,10 @@ on:
         default: pnpm run build
         type: string
         required: false
-        description: build script
       publish:
-        default: false
-        type: boolean
+        default: ''
+        type: string # npm vscode
         required: false
-        description: Whether publish to npm
 
 jobs:
   reusable_workflow_job:
@@ -49,8 +47,23 @@ jobs:
       # Ensure npm 11.5.1 or later is installed
       - name: Update npm
         run: npm install -g npm@latest
-        if: ${{inputs.publish}}
+        if: ${{ inputs.publish }} == 'npm'
 
-      - name: Publish
+      - name: Publish npm package
         run: pnpm -r publish --access public --no-git-checks
-        if: ${{inputs.publish}}
+        if: ${{ inputs.publish }} == 'npm'
+
+      # Generate .vsix file
+      - name: Generate .vsix file
+        run: npx vsce package --no-dependencies
+        if: ${{ inputs.publish }} == 'vscode'
+
+      # Publish extension to all platforms
+      # Or you can skip publishing to specific platforms in CI and run npx vsxpub locally without configuring secrets
+      - name: Publish Extension
+        run: npx vsxpub --no-dependencies
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          VSCE_PAT: ${{secrets.VSCE_PAT}}
+          OVSX_PAT: ${{secrets.OVSX_PAT}}
+        if: ${{ inputs.publish }} == 'vscode'
