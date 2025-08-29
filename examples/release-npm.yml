@@ -1,0 +1,15 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  release:
+    uses: kvoon3/workflows/.github/workflows/pnpm-release.yml@main
+    with:
+      publish: npm
+    permissions:
+      contents: write
+      id-token: write
